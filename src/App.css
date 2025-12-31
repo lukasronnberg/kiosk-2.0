@@ -1,10 +1,12 @@
 /* src/App.css */
 
 :root {
-  --primary-red: #c0392b; /* En snygg djup röd färg */
+  --primary-red: #c0392b;
   --dark-red: #962d22;
   --bg-color: #f4f4f4;
   --pay-green: #27ae60;
+  --text-dark: #333;
+  --border-light: #eee;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -12,8 +14,9 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: var(--bg-color);
-  color: #333;
+  color: var(--text-dark);
   overflow: hidden;
+  user-select: none; /* Förhindrar textmarkering vid snabba klick */
 }
 
 .app-container {
@@ -27,11 +30,12 @@ body {
   position: fixed; top: 0; left: 0; right: 0; height: 25px;
   background-color: #f39c12; color: white; text-align: center;
   font-size: 0.8rem; font-weight: bold; line-height: 25px; z-index: 2000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
 /* --- VÄNSTER SIDA (Sidebar) --- */
 .cart-sidebar {
-  width: 400px; /* Lite bredare för sökfältet */
+  width: 400px;
   background-color: #ffffff;
   border-right: 1px solid #e0e0e0;
   display: flex; flex-direction: column;
@@ -41,57 +45,43 @@ body {
 
 .cart-header {
   padding: 20px;
-  background-color: var(--primary-red); /* RÖD HEADER */
+  background-color: var(--primary-red);
   color: white;
   display: flex; flex-direction: column; gap: 10px;
 }
 
 /* SÖKBAR KUNDLISTA */
-.customer-search-container {
-  position: relative;
-}
+.customer-search-container { position: relative; }
+.search-title { margin-bottom: 10px; }
 
 .search-input {
   width: 100%; padding: 12px 15px; font-size: 1rem;
   border: none; border-radius: 8px; outline: none;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
+.search-input:focus { box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
 
 .search-results-dropdown {
-  position: absolute; 
-  top: 105%; 
-  left: 0; 
-  right: 0;
-  max-height: 400px; /* Högre lista så man ser fler */
-  overflow-y: auto; /* Scrollbar om listan är lång */
-  background: white; 
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25); /* Tydligare skugga så den "flyter" ovanpå */
-  z-index: 9999; /* Alltid överst */
-  border: 1px solid #eee;
+  position: absolute; top: 105%; left: 0; right: 0;
+  max-height: 400px; overflow-y: auto;
+  background: white; border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  z-index: 9999; border: 1px solid #eee;
 }
-
-.search-results-dropdown::-webkit-scrollbar {
-  width: 8px;
-}
-
-.search-results-dropdown::-webkit-scrollbar-thumb {
-  background-color: #ccc;
-  border-radius: 4px;
-}
+.search-results-dropdown::-webkit-scrollbar { width: 8px; }
+.search-results-dropdown::-webkit-scrollbar-thumb { background-color: #ccc; border-radius: 4px; }
 
 .search-result-item {
   padding: 12px; border-bottom: 1px solid #eee;
   cursor: pointer; color: #333; display: flex; justify-content: space-between;
 }
 .search-result-item:hover { background-color: #f9f9f9; }
-.search-result-item strong { color: var(--primary-red); }
+.no-results { padding: 15px; color: #999; text-align: center; }
 
 /* VALD KUND INFO */
 .selected-customer-card {
   background: rgba(255,255,255,0.15);
-  padding: 15px; border-radius: 8px;
-  position: relative;
+  padding: 15px; border-radius: 8px; position: relative;
 }
 .change-customer-btn {
   position: absolute; top: 10px; right: 10px;
@@ -100,18 +90,21 @@ body {
 }
 .change-customer-btn:hover { background: rgba(0,0,0,0.4); }
 
+.customer-card-name { font-size: 1.3rem; margin-bottom: 5px; }
+.customer-card-type { font-size: 0.9rem; opacity: 0.9; margin-bottom: 5px; }
+.customer-card-balance-row { display: flex; justify-content: space-between; margin-top: 10px; font-size: 1.1rem; font-weight: bold; }
+.balance-negative { color: #ffcccb; }
+.balance-neutral { color: white; }
+.limit-info { font-size: 0.8rem; margin-top: 5px; opacity: 0.8; }
+
 /* VARUKORG */
 .cart-items { flex: 1; overflow-y: auto; padding: 10px; background: #fff; }
 .cart-header-title {
   display: flex; justify-content: space-between; align-items: center;
   border-bottom: 2px solid #f0f0f0; padding: 10px; margin-bottom: 10px;
 }
-.cart-item-info {
-  display: flex;
-  flex-direction: column;
-  gap: 6px; /* Mer mellanrum mellan Namn och Pris */
-  justify-content: center;
-}
+.clear-cart-btn { font-size: 0.8em; color: #e74c3c; cursor: pointer; font-weight: bold; }
+.empty-cart-msg { color: #ccc; text-align: center; margin-top: 40px; font-size: 0.9rem; }
 
 .cart-item {
   display: flex; justify-content: space-between; align-items: center;
@@ -120,38 +113,17 @@ body {
 }
 @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-.cart-item-name {
-  font-weight: 700;
-  font-size: 1rem;
-  line-height: 1.2;
-}
-.cart-item-price {
-  font-size: 0.9rem;
-  color: #666;
-  font-weight: 500;
-}
-.cart-controls {
-  display: flex; align-items: center; gap: 5px;
-  background: #f0f0f0; border-radius: 6px; padding: 3px;
-}
+.cart-item-info { display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+.cart-item-name { font-weight: 700; font-size: 1rem; line-height: 1.2; }
+.cart-item-price { font-size: 0.9rem; color: #666; font-weight: 500; }
+
+.cart-controls { display: flex; align-items: center; gap: 5px; background: #f0f0f0; border-radius: 6px; padding: 3px; }
 .qty-btn {
-  width: 32px; 
-  height: 32px; 
-  border: none; 
-  background: white;
-  border-radius: 6px; 
-  font-weight: bold; 
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-  color: var(--primary-red);
-  font-size: 1.4rem; /* Lite större tecken för snyggare balans */
-  
-  /* PERFEKT CENTRERING */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0; /* VIKTIGT: Nollställ padding */
-  line-height: 1; /* VIKTIGT: Nollställ radavstånd */
+  width: 32px; height: 32px; border: none; background: white;
+  border-radius: 6px; font-weight: bold; cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: var(--primary-red);
+  font-size: 1.4rem; display: flex; align-items: center; justify-content: center;
+  padding: 0; line-height: 1;
 }
 .qty-btn:active { transform: scale(0.9); }
 .qty-display { min-width: 20px; text-align: center; font-weight: bold; font-size: 0.9rem; }
@@ -161,55 +133,29 @@ body {
 .total-row { display: flex; justify-content: space-between; font-size: 1.6rem; font-weight: bold; margin-bottom: 15px; color: #333; }
 
 .pay-button {
-  width: 100%; padding: 20px;
-  background-color: var(--pay-green); /* Behåll grön för pengar */
+  width: 100%; padding: 20px; background-color: var(--pay-green);
   color: white; border: none; border-radius: 12px;
   font-size: 1.3rem; font-weight: bold; cursor: pointer;
-  box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3);
-  transition: transform 0.1s;
+  box-shadow: 0 4px 6px rgba(39, 174, 96, 0.3); transition: transform 0.1s;
 }
 .pay-button:hover { background-color: #219150; }
 .pay-button:active { transform: scale(0.98); }
 .pay-button:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
 
 /* --- HÖGER SIDA (Produkter) --- */
-.product-area {
-  flex: 1; display: flex; flex-direction: column; background-color: var(--bg-color);
-}
+.product-area { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-color); }
 
 .product-header {
-  padding: 15px 25px; 
-  background: white;
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center;
-  border-bottom: 1px solid #eee;
-  height: 100px; /* Tvinga headern att vara lite högre */
+  padding: 15px 25px; background: white;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid #eee; height: 100px;
 }
-
-.logo-container {
-  display: flex; 
-  align-items: center; 
-  gap: 20px;
-}
-.app-logo { 
-  height: 80px; /* Mycket större logga */
-  width: auto; 
-  object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); /* Snygg skugga bakom loggan */
-}
-.app-title { 
-  font-size: 2rem; /* Större text */
-  font-weight: 900; 
-  color: var(--primary-red); 
-  letter-spacing: -1px; 
-  text-transform: uppercase;
-}
+.logo-container { display: flex; align-items: center; gap: 20px; }
+.app-logo { height: 80px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+.app-title { font-size: 2rem; font-weight: 900; color: var(--primary-red); letter-spacing: -1px; text-transform: uppercase; }
 
 /* KATEGORIER */
-.category-tabs {
-  display: flex; gap: 10px; padding: 15px 25px; overflow-x: auto;
-}
+.category-tabs { display: flex; gap: 10px; padding: 15px 25px; overflow-x: auto; }
 .category-tab {
   padding: 8px 16px; background: white; border: 1px solid #ddd;
   border-radius: 20px; font-weight: 600; color: #666; cursor: pointer;
@@ -226,7 +172,6 @@ body {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 15px; padding-bottom: 50px;
 }
-
 .product-card {
   background: white; border-radius: 12px; padding: 15px; height: 130px;
   display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -245,15 +190,30 @@ body {
 .admin-lock-btn:hover { opacity: 1; }
 .manage-customers-btn { width: 100%; padding: 10px; background: #34495e; color: white; border: none; border-radius: 6px; margin-top: 10px; cursor: pointer; }
 
-/* MODAL & ÖVRIGT (Behålls mestadels samma) */
+/* MODAL STYLING */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 3000; backdrop-filter: blur(4px); }
 .modal-box { background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+.success-mode { border: 2px solid var(--pay-green); }
+.modal-title { margin-bottom: 15px; font-size: 1.5rem; }
+.modal-message { white-space: pre-line; margin-bottom: 20px; font-size: 1.1rem; color: #555; }
 .modal-buttons { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+
 .btn-modal { padding: 12px 24px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
 .btn-cancel { background: #eee; color: #333; }
 .btn-confirm { background: var(--primary-red); color: white; }
+.btn-full-width { width: 100%; margin-bottom: 10px; }
+
+/* Admin Lists inside Modal */
+.admin-list-container { max-height: 300px; overflow-y: auto; text-align: left; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; }
+.customer-list-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
+.customer-row-info { font-size: 0.95rem; }
+.customer-row-type { font-size: 0.8em; color: #888; }
+.modal-close-container { text-align: center; margin-top: 10px; }
+
 .admin-form { display: flex; flex-direction: column; gap: 15px; text-align: left; }
 .admin-form input, .admin-form select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+.new-cat-input { border-color: #f39c12 !important; }
+
 .success-icon { font-size: 4rem; color: var(--pay-green); display: block; margin-bottom: 10px; }
 .add-product-card { border: 2px dashed #ccc; font-size: 3rem; color: #ccc; }
 .admin-controls { margin-top: 5px; display: flex; gap: 5px; width: 100%; }
