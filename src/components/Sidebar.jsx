@@ -1,8 +1,8 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import './Sidebar.css';
 
 // Enligt din instruktion:
-const CAMP_START_DATE = new Date("2025-12-30");
+const CAMP_START_DATE = new Date(import.meta.env.VITE_CAMP_START_DATE || "2025-12-30");
 
 const Sidebar = ({ 
   cart, 
@@ -10,7 +10,7 @@ const Sidebar = ({
   customers, 
   selectedCustomer, 
   onSelectCustomer, 
-  onUpdateCart, // Ska hantera { product, action: 'add' | 'decrease' | 'clear' }
+  onUpdateCart, 
   onCheckout, 
   onManageCustomers,
   adminMode,
@@ -20,9 +20,10 @@ const Sidebar = ({
   const [isSearching, setIsSearching] = useState(false);
   const searchInputRef = useRef(null);
 
-  // Filtrera kunder
+  // --- 1. LOGIK FÖR ATT VISA KUNDER ---
+  // Om sökfältet är tomt, visa ALLA kunder (så man ser listan vid klick)
   const filteredCustomers = useMemo(() => {
-    if (!searchTerm) return [];
+    if (!searchTerm) return customers; 
     const lower = searchTerm.toLowerCase();
     return customers.filter(c => c.name.toLowerCase().includes(lower));
   }, [searchTerm, customers]);
@@ -45,6 +46,40 @@ const Sidebar = ({
     setIsSearching(false);
   };
 
+  // --- 2. TANGENTBORDS-MAGI (Global Fokus) ---
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      // Om admin-läge är på eller vi redan har en vald kund, gör inget
+      if (adminMode || selectedCustomer) return;
+
+      // Om vi redan står i input-fältet, gör inget (annars loopar det)
+      if (document.activeElement === searchInputRef.current) return;
+
+      // Ignorera specialtangenter (Ctrl, Alt, Meta, F-tangenter osv)
+      if (e.ctrlKey || e.metaKey || e.altKey || e.key.length > 1) return;
+
+      // Om det är en bokstav/siffra -> Fokusera sökfältet
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [adminMode, selectedCustomer]);
+
+
+  // --- 3. HANTERA "ENTER" I SÖKFÄLTET ---
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Välj första träffen i listan om den finns
+      if (filteredCustomers.length > 0) {
+        handleSelect(filteredCustomers[0]);
+        // Tappa fokus så man kan scanna varor direkt
+        searchInputRef.current?.blur(); 
+      }
+    }
+  };
+
   return (
     <div className="cart-sidebar">
       {/* HEADER: KUNDVAL */}
@@ -59,10 +94,14 @@ const Sidebar = ({
               placeholder="🔍 Sök eller välj..." 
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setIsSearching(true); }}
+              onKeyDown={handleInputKeyDown} // <--- Här lade vi till Enter-stödet
               onFocus={() => setIsSearching(true)}
+              // Liten fördröjning vid blur så man hinner klicka på listan
               onBlur={() => setTimeout(() => setIsSearching(false), 200)}
             />
-            {isSearching && searchTerm && (
+            
+            {/* Visa listan om man söker ELLER om man klickat i rutan (isSearching) */}
+            {isSearching && (
               <div className="search-results-dropdown">
                 {filteredCustomers.length === 0 ? 
                   <div className="no-results">Ingen hittades...</div> : 
