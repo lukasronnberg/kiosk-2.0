@@ -175,7 +175,8 @@ function App() {
     let count = 0;
     
     for (const customer of debtors) {
-        if (!customer.email) continue;
+        if (!customer.email) continue; // Hoppa över om mail saknas
+        
         const templateId = type === 'reminder' 
           ? import.meta.env.VITE_EMAILJS_REMINDER_TEMPLATE_ID 
           : import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
@@ -185,8 +186,8 @@ function App() {
             import.meta.env.VITE_EMAILJS_SERVICE_ID,
             templateId || import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
             {
-              to_email: TEST_EMAIL_OVERRIDE, 
-              original_customer_email: customer.email,
+              // HÄR ÄR ÄNDRINGEN: Nu skickar vi till kundens riktiga mail
+              to_email: customer.email, 
               to_name: customer.name,
               amount: customer.currentBalance,
               swish_number: SWISH_NUMBER
@@ -194,11 +195,11 @@ function App() {
             import.meta.env.VITE_EMAILJS_PUBLIC_KEY
           );
           count++;
-          await new Promise(r => setTimeout(r, 400)); // Rate limit
-        } catch (e) { console.error(e); }
+          await new Promise(r => setTimeout(r, 400)); // Rate limit för att inte bli blockad
+        } catch (e) { console.error("Misslyckades skicka till " + customer.name, e); }
     }
     setIsProcessing(false);
-    setModal({ isOpen: true, type: 'success', title: "✅ Klart!", message: `Skickade ${count} mail.` });
+    setModal({ isOpen: true, type: 'success', title: "✅ Klart!", message: `Skickade ${count} mail skarpt.` });
   };
 
   // --- TANGENTBORDSSHORTCUTS ---
