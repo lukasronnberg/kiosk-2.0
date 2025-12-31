@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Hjälpfunktioner
+    function isValidProduct() {
+      return request.resource.data.keys().hasAll(['name', 'price', 'category']) &&
+             request.resource.data.price is number &&
+             request.resource.data.name is string;
+    }
+
+    // Produkter: Alla får läsa, men man måste skicka giltig data för att skriva
+    match /products/{product} {
+      allow read: if true;
+      allow write: if isValidProduct();
+    }
+
+    // Kunder: Validera att saldo är ett nummer
+    match /customers/{customer} {
+      allow read: if true;
+      allow write: if request.resource.data.currentBalance is number;
+    }
+
+    // Transaktioner: Får bara skapas (create), inte ändras eller raderas i efterhand!
+    // Detta är viktigt för kassasystem.
+    match /transactions/{txn} {
+      allow read: if true;
+      allow create: if request.resource.data.totalAmount is number;
+      allow update, delete: if false; 
+    }
+  }
+}
