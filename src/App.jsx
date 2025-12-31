@@ -27,7 +27,7 @@ function App() {
   const { isAuthenticated, verifyPin } = useAuth();
   
   const { 
-    products, customers, reloadCustomers, fetchProducts,
+    products, customers, reloadCustomers,
     saveProduct, deleteProduct, saveCustomer 
   } = useKioskData(isAuthenticated);
   
@@ -55,6 +55,23 @@ function App() {
   };
 
   const closeModal = () => setModal({ isOpen: false, type: null });
+
+  // --- NYA FUNKTIONER FÖR ATT SPARA OCH STÄNGA ---
+  // Dessa behövs för att rutan ska försvinna när man trycker spara
+
+  const handleSaveProduct = async (data, id) => {
+    const success = await saveProduct(data, id);
+    if (success) closeModal();
+  };
+
+  const handleSaveCustomer = async (data, id) => {
+    const success = await saveCustomer(data, id);
+    if (success) {
+        closeModal();
+        // Om vi är i admin-läge och hanterar kunder, öppna listan igen
+        setTimeout(() => setModal({ isOpen: true, type: 'manage-customers' }), 300);
+    }
+  };
 
   // --- KÖP-LOGIK ---
 
@@ -119,9 +136,8 @@ function App() {
 
   // --- BETALNING & ÅNGRA (EKONOMI) ---
 
-  const handleRegisterPayment = async (amount) => {
+  const handleRegisterPayment = async (customer, amount) => {
     const amountToPay = parseFloat(amount);
-    const customer = modal.data;
     if (!customer || isNaN(amountToPay) || amountToPay <= 0) return;
 
     try {
@@ -138,9 +154,8 @@ function App() {
     } catch (e) { console.error(e); }
   };
 
-  const handleUndoPayment = async (amount) => {
+  const handleUndoPayment = async (customer, amount) => {
     const amountToAdd = parseFloat(amount);
-    const customer = modal.data;
     if (!customer || isNaN(amountToAdd) || amountToAdd <= 0) return;
 
     try {
@@ -157,14 +172,15 @@ function App() {
     } catch (e) { console.error(e); }
   };
 
-  // --- EMAIL HANTERING ---
+  // --- EMAIL HANTERING (Skarpt läge) ---
 
   const handleEmailAll = (type) => {
+    // Filtrera fram de med skuld för e-post
     const debtors = customers.filter(c => c.currentBalance > 0);
     setModal({
       isOpen: true, type: 'confirm-mass-email',
       title: type === 'invoice' ? 'Skicka Fakturor?' : 'Skicka Påminnelser?',
-      message: `Skickar till ${debtors.length} personer (Testmail: ${TEST_EMAIL_OVERRIDE})`,
+      message: `Detta skickar mail till ALLA ${debtors.length} personer med skuld.`,
       onConfirm: () => processMassEmail(type, debtors)
     });
   };
@@ -175,7 +191,7 @@ function App() {
     let count = 0;
     
     for (const customer of debtors) {
-        if (!customer.email) continue; // Hoppa över om mail saknas
+        if (!customer.email) continue;
         
         const templateId = type === 'reminder' 
           ? import.meta.env.VITE_EMAILJS_REMINDER_TEMPLATE_ID 
@@ -186,7 +202,6 @@ function App() {
             import.meta.env.VITE_EMAILJS_SERVICE_ID,
             templateId || import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
             {
-              // HÄR ÄR ÄNDRINGEN: Nu skickar vi till kundens riktiga mail
               to_email: customer.email, 
               to_name: customer.name,
               amount: customer.currentBalance,
@@ -195,11 +210,11 @@ function App() {
             import.meta.env.VITE_EMAILJS_PUBLIC_KEY
           );
           count++;
-          await new Promise(r => setTimeout(r, 400)); // Rate limit för att inte bli blockad
-        } catch (e) { console.error("Misslyckades skicka till " + customer.name, e); }
+          await new Promise(r => setTimeout(r, 400)); // Rate limit
+        } catch (e) { console.error(e); }
     }
     setIsProcessing(false);
-    setModal({ isOpen: true, type: 'success', title: "✅ Klart!", message: `Skickade ${count} mail skarpt.` });
+    setModal({ isOpen: true, type: 'success', title: "✅ Klart!", message: `Skickade ${count} mail.` });
   };
 
   // --- TANGENTBORDSSHORTCUTS ---
@@ -208,9 +223,7 @@ function App() {
     const handleKeyDown = (e) => {
       if (!isAuthenticated) return;
       if (e.key === 'Enter') {
-        if (modal.isOpen && modal.onConfirm) {
-           // Hanteras oftast av knappen i modalen, men vi kan lägga till global confirm här om vi vill
-        } else if (!modal.isOpen && selectedCustomer && cart.length > 0 && !isProcessing && !adminMode) {
+        if (!modal.isOpen && selectedCustomer && cart.length > 0 && !isProcessing && !adminMode) {
           e.preventDefault();
           initiatePurchase();
         }
@@ -259,12 +272,11 @@ function App() {
         customers={customers}
         products={products}
         actions={{
-          saveCustomer, 
-          saveProduct,
+          // HÄR ÄNDRADE VI: Vi skickar in de nya funktionerna som även stänger rutan
+          saveCustomer: handleSaveCustomer, 
+          saveProduct: handleSaveProduct,
           openManageCustomers: () => setModal({ isOpen: true, type: 'manage-customers' }),
-          openEditCustomer: (c) => setModal({ isOpen: true, type: 'edit-customer', data: c }),
-          registerPayment: handleRegisterPayment, // Callback från modal input
-          undoPayment: handleUndoPayment
+          openEditCustomer: (c) => setModal({ isOpen: true, type: 'edit-customer', data: c })
         }}
       />
 
@@ -279,16 +291,14 @@ function App() {
             title: `Betalning: ${c.name}`, 
             message: `Skuld: ${c.currentBalance} kr`,
             inputValue: c.currentBalance,
-            data: c,
-            onConfirm: handleRegisterPayment 
+            onConfirm: (amount) => handleRegisterPayment(c, amount) 
           })}
           onUndoPayment={(c) => setModal({ 
             isOpen: true, type: 'undo-payment', 
             title: `Ångra: ${c.name}`, 
             message: "Belopp att lägga tillbaka på skuld:",
             inputValue: c.totalSpent || 0,
-            data: c,
-            onConfirm: handleUndoPayment
+            onConfirm: (amount) => handleUndoPayment(c, amount)
           })}
         />
       ) : (
@@ -311,7 +321,7 @@ function App() {
             adminMode={adminMode}
             toggleAdmin={() => { setAdminMode(!adminMode); setEconomyMode(false); }}
             onProductClick={addToCart}
-            onEditProduct={(p) => setModal({ isOpen: true, type: 'edit-product', data: p, onConfirm: (d) => saveProduct(d, p?.id) })}
+            onEditProduct={(p) => setModal({ isOpen: true, type: 'edit-product', data: p })}
             onDeleteProduct={deleteProduct}
           />
         </>

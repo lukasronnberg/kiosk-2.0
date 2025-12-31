@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase'; // Kontrollera att sökvägen till firebase.js stämmer
+import { db } from '../firebase'; 
 
 export const useKioskData = (isAuthenticated) => {
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
 
-  // Hämta produkter
+  // --- HÄMTA DATA ---
+
   const fetchProducts = useCallback(async () => {
     try {
       const prodSnap = await getDocs(collection(db, "products"));
@@ -18,7 +19,6 @@ export const useKioskData = (isAuthenticated) => {
     }
   }, []);
 
-  // Hämta kunder
   const reloadCustomers = useCallback(async () => {
     try {
       const custSnap = await getDocs(collection(db, "customers"));
@@ -30,7 +30,6 @@ export const useKioskData = (isAuthenticated) => {
     }
   }, []);
 
-  // Ladda data när man loggar in
   useEffect(() => {
     if (isAuthenticated) {
       fetchProducts();
@@ -38,37 +37,63 @@ export const useKioskData = (isAuthenticated) => {
     }
   }, [isAuthenticated, fetchProducts, reloadCustomers]);
 
-  // --- ACTIONS (Spara/Ta bort) ---
+  // --- ACTIONS (SPARA / TA BORT) ---
 
-  const saveProduct = async (data, id) => {
+  const saveProduct = async (formData, id) => {
     try {
+      // 1. STÄDA DATAN (Viktigt för Firebase-reglerna!)
+      // Om man valt "Ny kategori" i listan, använd det skrivna namnet istället
+      const categoryToSave = (formData.category === 'NEW_CAT_OPTION') 
+        ? formData.newCategory 
+        : formData.category;
+
+      const cleanedData = {
+        name: formData.name,
+        // Tvinga priset till en siffra. Om det misslyckas blir det 0.
+        price: Number(formData.price) || 0, 
+        category: categoryToSave || 'Övrigt'
+      };
+
+      // 2. SKICKA TILL FIREBASE
       if (id) {
-        await updateDoc(doc(db, "products", id), data);
+        await updateDoc(doc(db, "products", id), cleanedData);
       } else {
-        await addDoc(collection(db, "products"), data);
+        await addDoc(collection(db, "products"), cleanedData);
       }
-      fetchProducts();
+      
+      fetchProducts(); // Uppdatera listan direkt
       return true;
     } catch (e) {
-      console.error(e);
-      alert("Kunde inte spara produkt.");
+      console.error("Firebase Error:", e); // Logga felet så vi ser det i konsolen
+      alert("Kunde inte spara produkt. Kontrollera att priset är en siffra.");
       return false;
     }
   };
 
   const deleteProduct = async (product) => {
     if (confirm("Radera " + product.name + "?")) {
-      await deleteDoc(doc(db, "products", product.id));
-      fetchProducts();
+      try {
+        await deleteDoc(doc(db, "products", product.id));
+        fetchProducts();
+      } catch (e) {
+        console.error(e);
+        alert("Kunde inte ta bort produkten.");
+      }
     }
   };
 
-  const saveCustomer = async (data, id) => {
+  const saveCustomer = async (formData, id) => {
     try {
+      // Städa kund-datan också för säkerhets skull
+      const cleanedData = {
+        ...formData,
+        currentBalance: Number(formData.currentBalance) || 0
+      };
+
       if (id) {
-        await updateDoc(doc(db, "customers", id), data);
+        await updateDoc(doc(db, "customers", id), cleanedData);
       } else {
-        await addDoc(collection(db, "customers"), data);
+        await addDoc(collection(db, "customers"), cleanedData);
       }
       reloadCustomers();
       return true;

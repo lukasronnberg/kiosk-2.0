@@ -13,10 +13,11 @@ const ModalManager = ({
   const inputRef = useRef(null);
 
   // Auto-close success messages
+  // ÄNDRAT: Från 2500 till 1200ms (Mycket snabbare!)
   useEffect(() => {
     let timer;
     if (modal.isOpen && modal.type === 'success') {
-      timer = setTimeout(() => close(), 1500);
+      timer = setTimeout(() => close(), 1200);
     }
     return () => clearTimeout(timer);
   }, [modal, close]);
@@ -24,35 +25,34 @@ const ModalManager = ({
   // Fokusera input vid öppning
   useEffect(() => {
     if (modal.isOpen) {
-      // Nollställ formulärdata om vi öppnar en edit-modal
       if (modal.type === 'edit-customer') {
         setFormData(modal.data || { name: '', type: 'Konfirmand', currentBalance: 0, email: '' });
       } else if (modal.type === 'edit-product') {
         setFormData(modal.data || { name: '', price: '', category: 'Övrigt' });
         setIsCreatingCategory(false);
       }
-      
       // Fokusera
       setTimeout(() => inputRef.current?.focus(), 50);
     }
   }, [modal.isOpen, modal.type, modal.data]);
 
-  // Räkna ut kategorier för dropdown
   const categories = useMemo(() => {
     const cats = new Set(products.map(p => p.category || "Övrigt"));
     return Array.from(cats).sort();
   }, [products]);
 
-  // Hantera tangentbord i inputs
-  const handleKeyDown = (e, callback) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      callback();
-    }
-  };
-
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Hantera Enter för de små input-fönstren (Betalning)
+  const handleSimpleInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (inputRef.current && modal.onConfirm) {
+        modal.onConfirm(inputRef.current.value);
+      }
+    }
   };
 
   if (!modal.isOpen) return null;
@@ -69,12 +69,10 @@ const ModalManager = ({
             <p className="modal-message">{modal.message}</p>
             
             <div className="modal-buttons">
-              {/* Visa bara Cancel om det är en fråga */}
               {(modal.type.includes('confirm')) && (
                 <button className="btn-modal btn-cancel" onClick={close}>AVBRYT</button>
               )}
               
-              {/* Bekräfta-knapp */}
               {(modal.type !== 'success') && (
                 <button 
                   className="btn-modal btn-confirm" 
@@ -99,7 +97,7 @@ const ModalManager = ({
               defaultValue={modal.inputValue} 
               className="admin-form input"
               style={{fontSize: '1.5rem', textAlign: 'center', width: '100%', marginBottom: '20px'}}
-              onKeyDown={(e) => handleKeyDown(e, () => modal.onConfirm(inputRef.current.value))}
+              onKeyDown={handleSimpleInputKeyDown}
             />
             <div className="modal-buttons">
               <button className="btn-modal btn-cancel" onClick={close}>AVBRYT</button>
@@ -113,7 +111,7 @@ const ModalManager = ({
           </div>
         )}
 
-        {/* --- MANAGE CUSTOMERS (List) --- */}
+        {/* --- MANAGE CUSTOMERS --- */}
         {modal.type === 'manage-customers' && (
            <div>
              <h2 className="modal-title">{modal.title}</h2>
@@ -187,7 +185,7 @@ const ModalManager = ({
                 ref={inputRef}
                 value={formData.name || ''} 
                 onChange={(e) => handleInputChange('name', e.target.value)} 
-            />
+             />
             <label>Pris (kr):</label>
             <input 
                 type="number" 
@@ -206,7 +204,6 @@ const ModalManager = ({
               <option disabled>──────────</option>
               <option value="NEW_CAT_OPTION">+ SKAPA NY KATEGORI...</option>
             </select>
-            
             {isCreatingCategory && (
                 <input 
                     className="new-cat-input" 
@@ -215,7 +212,6 @@ const ModalManager = ({
                     onChange={(e) => handleInputChange('newCategory', e.target.value)} 
                 />
             )}
-            
             <div className="modal-buttons">
                 <button className="btn-modal btn-cancel" onClick={close}>Avbryt</button>
                 <button className="btn-modal btn-confirm" onClick={() => actions.saveProduct(formData, modal.data?.id)}>SPARA</button>

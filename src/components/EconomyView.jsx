@@ -1,8 +1,7 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import './EconomyView.css';
 
 const TEST_EMAIL_OVERRIDE = import.meta.env.VITE_TEST_EMAIL_OVERRIDE || "lukas.e.e.ronnberg@gmail.com";
-// Vi behöver datumet här också för att räkna ut maxgränsen
 const CAMP_START_DATE = new Date(import.meta.env.VITE_CAMP_START_DATE || "2025-12-30");
 
 const EconomyView = ({ 
@@ -12,6 +11,8 @@ const EconomyView = ({
   onUndoPayment, 
   isProcessing 
 }) => {
+  // State för sökning
+  const [searchQuery, setSearchQuery] = useState("");
 
   // --- 1. HJÄLPFUNKTION FÖR VECKA ---
   const getCurrentCampWeek = () => {
@@ -22,24 +23,21 @@ const EconomyView = ({
     return week > 0 ? week : 1;
   };
 
-  // --- 2. DIN SPECIELLA UTRÄKNING ---
+  // --- 2. STATISTIK (Behåller konfirmander här för total överblick) ---
   const customTotalStats = useMemo(() => {
     const currentWeek = getCurrentCampWeek();
     const weeklyLimit = currentWeek * 100;
 
-    // A. Hjonens faktiska totala spendering (Allt som INTE är konfirmander)
     const hjonSpent = customers
       .filter(c => (c.type || "").toLowerCase() !== "konfirmand")
       .reduce((sum, c) => sum + (c.totalSpent || 0), 0);
 
-    // B. Antal konfirmander * nuvarande maxgräns
     const konfirmandCount = customers
       .filter(c => (c.type || "").toLowerCase() === "konfirmand")
       .length;
     
     const konfirmandPot = konfirmandCount * weeklyLimit;
 
-    // Totalen
     return {
       total: hjonSpent + konfirmandPot,
       hjonPart: hjonSpent,
@@ -50,20 +48,39 @@ const EconomyView = ({
     };
   }, [customers]);
 
+  // --- 3. FILTRERING AV LISTOR ---
+  
+  // Hjälpfunktion: Är personen Konfirmand?
+  const isKonfirmand = (c) => (c.type || "").toLowerCase() === "konfirmand";
+  
+  // Hjälpfunktion: Matchar namnet sökningen?
+  const matchesSearch = (c) => {
+    if (!searchQuery) return true;
+    return c.name.toLowerCase().includes(searchQuery.toLowerCase());
+  };
 
-  // Filtrera fram de som har skuld (som vanligt)
+  // Filtrera fram skulder (Hjon/Ledare som inte är konfirmander)
   const debtors = useMemo(() => {
     return customers
-      .filter(c => c.currentBalance > 0)
+      .filter(c => 
+        c.currentBalance > 0 &&     // Har skuld
+        !isKonfirmand(c) &&         // Är INTE konfirmand
+        matchesSearch(c)            // Matchar söktext
+      )
       .sort((a, b) => b.currentBalance - a.currentBalance);
-  }, [customers]);
+  }, [customers, searchQuery]);
 
-  // Filtrera fram de som betalat klart
+  // Filtrera fram avslutade (Hjon/Ledare)
   const paidCustomers = useMemo(() => {
     return customers
-      .filter(c => c.currentBalance <= 0 && c.totalSpent > 0)
+      .filter(c => 
+        c.currentBalance <= 0 &&    // Ingen skuld
+        c.totalSpent > 0 &&         // Har handlat tidigare
+        !isKonfirmand(c) &&         // Är INTE konfirmand
+        matchesSearch(c)            // Matchar söktext
+      )
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [customers]);
+  }, [customers, searchQuery]);
 
   return (
     <div className="economy-view">
@@ -73,6 +90,7 @@ const EconomyView = ({
         <div className="economy-header-row">
             <div>
                 <h1>💰 Skulder & Fakturering</h1>
+                {/* Ingen varningstext längre (skarpt läge) */}
             </div>
             <div style={{display:'flex', gap:'10px'}}>
                 <button 
@@ -92,7 +110,7 @@ const EconomyView = ({
             </div>
         </div>
 
-        {/* --- NY STATISTIK-BOX --- */}
+        {/* --- STATISTIK-BOX --- */}
         <div style={{
           background: '#f1f8e9', 
           border: '1px solid #c5e1a5', 
@@ -115,9 +133,26 @@ const EconomyView = ({
             {customTotalStats.total} kr
           </div>
         </div>
-        {/* ------------------------- */}
 
-        {/* LISTA: SKULDER */}
+        {/* --- SÖKFÄLT --- */}
+        <div style={{marginBottom: '20px'}}>
+          <input 
+            type="text" 
+            placeholder="🔍 Sök efter namn..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              fontSize: '1rem',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              outline: 'none'
+            }}
+          />
+        </div>
+
+        {/* LISTA: SKULDER (Endast Hjon/Övriga) */}
         <h3 className="section-title">🛑 Aktuella Skulder ({debtors.length} st)</h3>
         <div className="debt-list">
           <div className="debt-header">
@@ -129,7 +164,7 @@ const EconomyView = ({
           
           {debtors.length === 0 && (
             <div style={{padding:'20px', textAlign:'center', color:'#aaa'}}>
-              Inga skulder just nu! 🎉
+              Ingen matchning (eller inga skulder).
             </div>
           )}
 
@@ -158,7 +193,7 @@ const EconomyView = ({
           ))}
         </div>
 
-        {/* LISTA: AVSLUTADE */}
+        {/* LISTA: AVSLUTADE (Endast Hjon/Övriga) */}
         <h3 className="section-title" style={{marginTop:'40px', color:'#27ae60'}}>
           ✅ Avslutade / Nollade ({paidCustomers.length} st)
         </h3>
