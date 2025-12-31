@@ -219,3 +219,70 @@ body {
 .admin-controls { margin-top: 5px; display: flex; gap: 5px; width: 100%; }
 .btn-admin-action { flex: 1; border: none; border-radius: 4px; color: white; cursor: pointer; padding: 4px; }
 .btn-edit { background: #3498db; } .btn-delete { background: #e74c3c; }
+
+/* --- LOGIN SCREEN --- */
+.login-screen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--primary-red);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+}
+.login-box {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  width: 90%;
+  max-width: 400px;
+}
+.login-logo {
+  height: 80px;
+  margin-bottom: 20px;
+}
+.login-box h1 {
+  color: var(--primary-red);
+  margin-bottom: 10px;
+}
+.pin-input {
+  font-size: 2rem;
+  letter-spacing: 10px;
+  text-align: center;
+  padding: 10px;
+  width: 100%;
+  margin: 20px 0;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+}
+.pin-input:focus {
+  border-color: var(--primary-red);
+  outline: none;
+}
+.pin-input.error {
+  border-color: #e74c3c;
+  animation: shake 0.3s;
+}
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
+}
+.login-btn {
+  width: 100%;
+  padding: 15px;
+  background: var(--text-dark);
+  color: white;
+  border: none;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.login-btn:hover {
+  background: black;
+}

@@ -1,34 +1,58 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
-import { db } from './firebase'
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, increment, Timestamp } from 'firebase/firestore'
-import './App.css'
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { db } from './firebase';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, increment, Timestamp } from 'firebase/firestore';
+import './App.css';
 
-const CAMP_START_DATE = new Date("2025-12-30"); 
+// Hämta konfig från .env
+const CAMP_START_DATE = new Date(import.meta.env.VITE_CAMP_START_DATE || "2025-12-30");
+const SITE_PIN = import.meta.env.VITE_APP_PIN || "0000";
 
 function App() {
+  // --- AUTH STATE ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [pinInput, setPinInput] = useState("");
+  const [pinError, setPinError] = useState(false);
+
+  // --- APP STATE ---
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [customerSearch, setCustomerSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [cart, setCart] = useState([]); 
-  // loading kan användas för en laddningssnurra senare
-  const [loading, setLoading] = useState(true); 
+  const [cart, setCart] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [adminMode, setAdminMode] = useState(false);
   const [activeCategory, setActiveCategory] = useState("ALLA");
+  
+  // Modal & Form State
+  const [modal, setModal] = useState({ isOpen: false, type: 'confirm', title: '', message: '', data: null, onConfirm: null });
+  const [formData, setFormData] = useState({}); // Ersätter document.getElementById
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+
   const searchInputRef = useRef(null);
 
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const [modal, setModal] = useState({ isOpen: false, type: 'confirm', title: '', message: '', data: null, onConfirm: null });
-
-  // Initial data fetch
+  // --- INITIAL LOAD ---
   useEffect(() => {
-    fetchProducts();
-    reloadCustomers();
-  }, []);
+    if (isAuthenticated) {
+      fetchProducts();
+      reloadCustomers();
+    }
+  }, [isAuthenticated]);
 
-  // Auto-close success modal
+  // --- AUTH HANDLER ---
+  const handlePinSubmit = (e) => {
+    e.preventDefault();
+    if (pinInput === SITE_PIN) {
+      setIsAuthenticated(true);
+      setPinError(false);
+    } else {
+      setPinError(true);
+      setPinInput("");
+      setTimeout(() => setPinError(false), 1000); // Skaka/röd text återställs
+    }
+  };
+
+  // --- AUTO CLOSE MODAL ---
   useEffect(() => {
     let timer;
     if (modal.isOpen && modal.type === 'success') {
@@ -37,13 +61,13 @@ function App() {
     return () => clearTimeout(timer);
   }, [modal]);
 
+  // --- DATABASE FUNCTIONS ---
   const fetchProducts = async () => {
     try {
       const prodSnap = await getDocs(collection(db, "products"));
       const prodList = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       prodList.sort((a, b) => a.name.localeCompare(b.name));
       setProducts(prodList);
-      setLoading(false);
     } catch (error) { console.error("Error fetching products:", error); }
   };
 
@@ -56,7 +80,7 @@ function App() {
     } catch (error) { console.error("Error fetching customers:", error); }
   };
 
-  // --- KATEGORIER ---
+  // --- COMPUTED DATA ---
   const categories = useMemo(() => {
     const cats = new Set(products.map(p => p.category || "Övrigt"));
     return ["ALLA", ...Array.from(cats).sort()];
@@ -72,20 +96,19 @@ function App() {
     return products.filter(p => (p.category || "Övrigt") === activeCategory);
   }, [products, activeCategory]);
 
-  // --- SÖK ---
   const filteredCustomers = useMemo(() => {
     if (!customerSearch) return customers;
     const lower = customerSearch.toLowerCase();
     return customers.filter(c => c.name.toLowerCase().includes(lower));
   }, [customerSearch, customers]);
 
+  // --- ACTIONS ---
   const selectCustomer = (customer) => {
     setSelectedCustomer(customer);
     setCustomerSearch(""); 
     setIsSearching(false);
   };
 
-  // --- CART ---
   const addToCart = (product) => {
     if (adminMode) return;
     setCart(prevCart => {
@@ -113,7 +136,7 @@ function App() {
   const totalSum = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  // --- KÖP ---
+  // --- PURCHASE LOGIC ---
   const getCurrentCampWeek = () => {
     const today = new Date();
     if (today < CAMP_START_DATE) return 1;
@@ -167,25 +190,36 @@ function App() {
       await reloadCustomers();
     } catch (e) { 
       console.error(e);
-      showAlert("❌ Fel", "Kunde inte genomföra köpet. Kontrollera nätverket."); 
+      showAlert("❌ Fel", "Kunde inte genomföra köpet."); 
     } finally { 
       setTimeout(() => setIsProcessing(false), 2000); 
     }
   };
 
-  // --- MODALS & ADMIN ---
+  // --- MODAL & FORM HANDLERS ---
   const toggleAdmin = () => setAdminMode(!adminMode);
-  const closeModal = () => { setModal({ ...modal, isOpen: false }); setIsCreatingCategory(false); };
+  
+  const closeModal = () => { 
+    setModal({ ...modal, isOpen: false }); 
+    setFormData({}); // Rensa formulärdata
+    setIsCreatingCategory(false); 
+  };
+  
   const showAlert = (title, message, isError = false) => setModal({ isOpen: true, type: isError ? 'error' : 'success', title, message, onConfirm: closeModal });
 
   const openCustomerManager = () => setModal({ isOpen: true, type: 'manage-customers', title: 'Hantera Kunder' });
-  const openCustomerEdit = (c=null) => setModal({ isOpen:true, type:'edit-customer', title: c?'Redigera':'Ny', data: c||{name:'',type:'Konfirmand',currentBalance:0}, onConfirm:(fd)=>saveCustomer(fd, c?.id) });
   
-  const saveCustomer = async (fd, id) => { 
+  // Uppdaterad för att använda formData state istället för DOM
+  const openCustomerEdit = (c=null) => {
+    setFormData(c || { name: '', type: 'Konfirmand', currentBalance: 0 });
+    setModal({ isOpen:true, type:'edit-customer', title: c ? 'Redigera' : 'Ny', onConfirm: (data) => saveCustomer(data, c?.id) });
+  };
+  
+  const saveCustomer = async (data, id) => { 
     try { 
-      const balance = Number(fd.currentBalance) || 0;
-      if(id) await updateDoc(doc(db,"customers",id), { ...fd, currentBalance: balance }); 
-      else await addDoc(collection(db,"customers"),{ ...fd, currentBalance: balance }); 
+      const balance = Number(data.currentBalance) || 0;
+      if(id) await updateDoc(doc(db,"customers",id), { ...data, currentBalance: balance }); 
+      else await addDoc(collection(db,"customers"),{ ...data, currentBalance: balance }); 
       
       closeModal(); 
       reloadCustomers(); 
@@ -193,32 +227,25 @@ function App() {
     } catch(e){ alert("Kunde inte spara kund."); } 
   };
   
-  const deleteCustomer = async (id, name) => { 
-    if(confirm("Radera " + name + "?")) { 
-      await deleteDoc(doc(db,"customers",id)); 
-      reloadCustomers(); 
-    }
-  };
-
   const openProductModal = (p=null) => {
+    setFormData(p || { name: '', price: '', category: 'Övrigt' });
     setModal({ 
       isOpen:true, 
       type:'edit-product', 
-      title: p?'Redigera':'Ny vara', 
-      data: p||{name:'',price:'',category:'Övrigt'}, 
-      onConfirm:(fd)=>saveProduct(fd, p?.id) 
+      title: p ? 'Redigera' : 'Ny vara', 
+      onConfirm: (data) => saveProduct(data, p?.id) 
     });
   };
 
-  const saveProduct = async (fd, id) => { 
+  const saveProduct = async (data, id) => { 
     try { 
-      const p = parseInt(fd.price); 
-      const finalCategory = fd.category === 'NEW_CAT_OPTION' ? fd.newCategory : fd.category;
+      const p = parseInt(data.price); 
+      const finalCategory = data.category === 'NEW_CAT_OPTION' ? data.newCategory : data.category;
       
       if (!finalCategory) return alert("Ange en kategori!");
 
-      if(id) await updateDoc(doc(db,"products",id),{name:fd.name,price:p,category:finalCategory}); 
-      else await addDoc(collection(db,"products"),{name:fd.name,price:p,category:finalCategory}); 
+      if(id) await updateDoc(doc(db,"products",id),{ name: data.name, price: p, category: finalCategory }); 
+      else await addDoc(collection(db,"products"),{ name: data.name, price: p, category: finalCategory }); 
       
       closeModal(); 
       fetchProducts(); 
@@ -231,54 +258,70 @@ function App() {
       fetchProducts(); 
     }
   };
+  
+  // Generic Input Change Handler
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
-  // Hantera Enter-tryck i sökfältet
+  // --- KEYBOARD LISTENERS ---
   const handleSearchKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault(); 
-      if (filteredCustomers.length > 0) {
-        selectCustomer(filteredCustomers[0]);
-      }
+      if (filteredCustomers.length > 0) selectCustomer(filteredCustomers[0]);
     }
   };
 
-  // --- TANGENTBORDS-HANTERING ---
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      // 1. ESCAPE
+      if (!isAuthenticated) return; // Inga kortkommandon om man är låst
+
       if (e.key === 'Escape') {
-        if (modal.isOpen) {
-          closeModal();
-        } else {
+        if (modal.isOpen) closeModal();
+        else {
           setSelectedCustomer(null);
           setCart([]);
           setCustomerSearch("");
           setIsSearching(false);
-          if (document.activeElement === searchInputRef.current) {
-            document.activeElement.blur();
-          }
+          if (document.activeElement === searchInputRef.current) document.activeElement.blur();
         }
         return; 
       }
 
-      // 2. AUTO-FOKUS
-      if (
-        !adminMode && 
-        !selectedCustomer && 
-        !modal.isOpen && 
-        e.key.length === 1 && 
-        !e.ctrlKey && !e.metaKey && !e.altKey
-      ) {
-        if (document.activeElement !== searchInputRef.current) {
-          searchInputRef.current?.focus();
-        }
+      if (!adminMode && !selectedCustomer && !modal.isOpen && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        if (document.activeElement !== searchInputRef.current) searchInputRef.current?.focus();
       }
     };
-
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [modal.isOpen, adminMode, selectedCustomer]);
+  }, [modal.isOpen, adminMode, selectedCustomer, isAuthenticated]);
 
+  // --- RENDER LOGIN SCREEN ---
+  if (!isAuthenticated) {
+    return (
+      <div className="login-screen">
+        <div className="login-box">
+          <img src="/logo.png" alt="Logo" className="login-logo" onError={(e) => e.target.style.display = 'none'}/>
+          <h1>Prästbyrån Kassa</h1>
+          <p>Ange PIN-kod för att öppna</p>
+          <form onSubmit={handlePinSubmit}>
+            <input 
+              type="password" 
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value)}
+              className={`pin-input ${pinError ? 'error' : ''}`}
+              placeholder="****"
+              autoFocus
+              maxLength={4}
+            />
+            <button type="submit" className="login-btn">Öppna</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // --- RENDER MAIN APP ---
   return (
     <div className={`app-container ${adminMode ? 'admin-active' : ''}`}>
       {adminMode && <div className="admin-mode-banner">🔧 ADMIN-LÄGE</div>}
@@ -300,57 +343,66 @@ function App() {
                          <strong>{c.name}</strong><br/>
                          <span className="customer-row-type">{c.type}</span>
                        </div>
-                       <div>
-                         <button className="btn-admin-action btn-edit" onClick={()=>openCustomerEdit(c)}>✏️</button>
-                       </div>
+                       <div><button className="btn-admin-action btn-edit" onClick={()=>openCustomerEdit(c)}>✏️</button></div>
                      </div>
                    ))}
                  </div>
-                 <div className="modal-close-container">
-                    <button className="btn-modal btn-cancel" onClick={closeModal}>Stäng</button>
-                 </div>
+                 <div className="modal-close-container"><button className="btn-modal btn-cancel" onClick={closeModal}>Stäng</button></div>
                </div>
             )}
             
-            {/* --- EDIT CUSTOMER MODAL --- */}
+            {/* --- EDIT CUSTOMER MODAL (Controlled Inputs) --- */}
             {modal.type === 'edit-customer' && (
                <div className="admin-form">
                  <label>Namn:</label>
-                 <input id="cName" defaultValue={modal.data.name} autoFocus />
+                 <input 
+                    value={formData.name || ''} 
+                    onChange={(e) => handleInputChange('name', e.target.value)} 
+                    autoFocus 
+                 />
                  <label>Typ:</label>
-                 <select id="cType" defaultValue={modal.data.type}>
+                 <select 
+                    value={formData.type || 'Konfirmand'} 
+                    onChange={(e) => handleInputChange('type', e.target.value)}
+                 >
                    <option>Konfirmand</option>
                    <option>Hjon</option>
                  </select>
                  <label>Saldo:</label>
-                 <input id="cBal" type="number" defaultValue={modal.data.currentBalance} />
-                 
+                 <input 
+                    type="number" 
+                    value={formData.currentBalance || 0} 
+                    onChange={(e) => handleInputChange('currentBalance', e.target.value)} 
+                 />
                  <div className="modal-buttons">
                    <button className="btn-modal btn-cancel" onClick={openCustomerManager}>Tillbaka</button>
-                   <button className="btn-modal btn-confirm" onClick={() => 
-                     modal.onConfirm({
-                       name: document.getElementById('cName').value, 
-                       type: document.getElementById('cType').value, 
-                       currentBalance: document.getElementById('cBal').value
-                     })
-                   }>SPARA</button>
+                   <button className="btn-modal btn-confirm" onClick={() => modal.onConfirm(formData)}>SPARA</button>
                  </div>
                </div>
             )}
             
-            {/* --- EDIT PRODUCT MODAL --- */}
+            {/* --- EDIT PRODUCT MODAL (Controlled Inputs) --- */}
             {modal.type === 'edit-product' && (
               <div className="admin-form">
                 <label>Namn:</label>
-                <input id="pName" defaultValue={modal.data.name} autoFocus />
+                <input 
+                    value={formData.name || ''} 
+                    onChange={(e) => handleInputChange('name', e.target.value)} 
+                    autoFocus 
+                />
                 <label>Pris (kr):</label>
-                <input id="pPrice" type="number" defaultValue={modal.data.price} />
-                
+                <input 
+                    type="number" 
+                    value={formData.price || ''} 
+                    onChange={(e) => handleInputChange('price', e.target.value)} 
+                />
                 <label>Kategori:</label>
                 <select 
-                  id="pCat" 
-                  defaultValue={modal.data.category || 'Övrigt'} 
-                  onChange={(e) => setIsCreatingCategory(e.target.value === 'NEW_CAT_OPTION')}
+                  value={formData.category || 'Övrigt'} 
+                  onChange={(e) => {
+                    handleInputChange('category', e.target.value);
+                    setIsCreatingCategory(e.target.value === 'NEW_CAT_OPTION');
+                  }}
                 >
                   {availableCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                   <option disabled>──────────</option>
@@ -358,24 +410,22 @@ function App() {
                 </select>
 
                 {isCreatingCategory && (
-                  <input id="pNewCat" className="new-cat-input" placeholder="Skriv namn på ny kategori..." />
+                  <input 
+                    className="new-cat-input" 
+                    placeholder="Skriv namn på ny kategori..." 
+                    value={formData.newCategory || ''}
+                    onChange={(e) => handleInputChange('newCategory', e.target.value)}
+                  />
                 )}
 
                 <div className="modal-buttons">
                   <button className="btn-modal btn-cancel" onClick={closeModal}>Avbryt</button>
-                  <button className="btn-modal btn-confirm" onClick={() => {
-                     modal.onConfirm({
-                       name: document.getElementById('pName').value, 
-                       price: document.getElementById('pPrice').value,
-                       category: document.getElementById('pCat').value,
-                       newCategory: isCreatingCategory ? document.getElementById('pNewCat').value : null
-                     })
-                  }}>SPARA</button>
+                  <button className="btn-modal btn-confirm" onClick={() => modal.onConfirm(formData)}>SPARA</button>
                 </div>
               </div>
             )}
 
-            {/* --- MESSAGES / CONFIRM --- */}
+            {/* --- CONFIRM / MESSAGES --- */}
             {(modal.type === 'confirm' || modal.type === 'error' || modal.type === 'success') && (
               <>
                 <p className="modal-message">{modal.message}</p>
@@ -411,19 +461,15 @@ function App() {
                 onFocus={() => setIsSearching(true)}
                 onBlur={() => setTimeout(() => setIsSearching(false), 200)} 
               />
-              
               {isSearching && (
                 <div className="search-results-dropdown">
-                  {filteredCustomers.length === 0 ? (
-                    <div className="no-results">Ingen hittades...</div> 
-                  ) : (
+                  {filteredCustomers.length === 0 ? <div className="no-results">Ingen hittades...</div> : 
                     filteredCustomers.map(c => (
                       <div key={c.id} className="search-result-item" onMouseDown={() => selectCustomer(c)}>
-                        <span>{c.name}</span>
-                        <span style={{fontSize:'0.8em', color:'#999'}}>{c.type}</span>
+                        <span>{c.name}</span><span style={{fontSize:'0.8em', color:'#999'}}>{c.type}</span>
                       </div>
                     ))
-                  )}
+                  }
                 </div>
               )}
             </div>
@@ -438,11 +484,7 @@ function App() {
                   {selectedCustomer.currentBalance} kr
                 </span>
               </div>
-              {isKonfirmand(selectedCustomer) && (
-                <div className="limit-info">
-                  Maxgräns (V.{getCurrentCampWeek()}): {getCurrentCampWeek()*100} kr
-                </div>
-              )}
+              {isKonfirmand(selectedCustomer) && <div className="limit-info">Maxgräns (V.{getCurrentCampWeek()}): {getCurrentCampWeek()*100} kr</div>}
             </div>
           )}
           {adminMode && <button className="manage-customers-btn" onClick={openCustomerManager}>👥 Hantera Kunder</button>}
@@ -517,4 +559,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

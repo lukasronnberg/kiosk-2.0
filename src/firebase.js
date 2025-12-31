@@ -2,19 +2,15 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 
-// Din konfiguration från Firebase-konsolen
 const firebaseConfig = {
-  apiKey: "AIzaSyDiwgFkBxjnmHBwAaYNvwYIxbAjw5vll3c",
-  authDomain: "prastbyrankassa.firebaseapp.com",
-  projectId: "prastbyrankassa",
-  storageBucket: "prastbyrankassa.firebasestorage.app",
-  messagingSenderId: "88797072592",
-  appId: "1:88797072592:web:10cbf5162f2b3d0ee1a2d5",
-  measurementId: "G-9ZYT1KQ5LL"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initiera Firebase
 const app = initializeApp(firebaseConfig);
-
-// Exportera databas-kopplingen så vi kan använda den i andra filer
 export const db = getFirestore(app);
