@@ -694,7 +694,8 @@ function App() {
 
           <div className="product-area">
             <div className="product-header">
-              <div className="logo-container"><img src="logo.png" alt="" className="app-logo" onError={(e) => e.target.style.display = 'none'} /><div className="app-title">PRÄSTBYRÅN</div></div>
+              <div className="logo-container"><img src="logo.png" alt="" className="app-logo" onError={(e) => e.target.style.display = 'none'} />
+              <div className="app-title" style={{ fontSize: '3.5rem', fontWeight: 'bold' }}>PRÄSTBYRÅN KASSA</div></div>
               <button className="admin-lock-btn" onClick={toggleAdmin}>{adminMode?"🔓":"🔒"}</button>
             </div>
             <div className="category-tabs">{categories.map(cat => (<div key={cat} className={`category-tab ${activeCategory === cat ? 'active' : ''}`} onClick={() => setActiveCategory(cat)}>{cat}</div>))}</div>

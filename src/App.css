@@ -68,9 +68,9 @@ body {
 
 /* PRODUCTS */
 .product-area { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-color); }
-.product-header { padding: 15px 25px; background: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; height: 100px; }
+.product-header { padding: 15px 30px; background: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; height: 140px; }
 .logo-container { display: flex; align-items: center; gap: 20px; }
-.app-logo { height: 80px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+.app-logo { height: 110px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
 .app-title { font-size: 2rem; font-weight: 900; color: var(--primary-red); letter-spacing: -1px; text-transform: uppercase; }
 .category-tabs { display: flex; gap: 10px; padding: 15px 25px; overflow-x: auto; }
 .category-tab { padding: 8px 16px; background: white; border: 1px solid #ddd; border-radius: 20px; font-weight: 600; color: #666; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
@@ -117,7 +117,7 @@ body {
 /* LOGIN SCREEN */
 .login-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--primary-red); display: flex; align-items: center; justify-content: center; z-index: 5000; }
 .login-box { background: white; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); width: 90%; max-width: 400px; }
-.login-logo { height: 80px; margin-bottom: 20px; }
+.login-logo { height: 180px; margin-bottom: 20px; }
 .login-box h1 { color: var(--primary-red); margin-bottom: 10px; }
 .pin-input { font-size: 2rem; letter-spacing: 10px; text-align: center; padding: 10px; width: 100%; margin: 20px 0; border: 2px solid #ddd; border-radius: 8px; }
 .pin-input:focus { border-color: var(--primary-red); outline: none; }
