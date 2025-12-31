@@ -1,0 +1,32 @@
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 3000; backdrop-filter: blur(4px); }
+.modal-box { background: white; padding: 30px; border-radius: 16px; width: 90%; max-width: 500px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+.success-mode { border: 2px solid var(--pay-green); }
+
+.modal-title { margin-bottom: 15px; font-size: 1.5rem; }
+.modal-message { white-space: pre-line; margin-bottom: 20px; font-size: 1.1rem; color: #555; }
+.success-icon { font-size: 4rem; color: var(--pay-green); display: block; margin-bottom: 10px; }
+
+/* Knappar */
+.modal-buttons { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+.btn-modal { padding: 12px 24px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+.btn-cancel { background: #eee; color: #333; }
+.btn-confirm { background: var(--pay-green); color: white; }
+.btn-confirm:hover { background: #219150; }
+.btn-full-width { width: 100%; margin-bottom: 10px; }
+
+/* Admin Listor (Manage Customers) */
+.admin-list-container { max-height: 300px; overflow-y: auto; text-align: left; border: 1px solid #eee; border-radius: 8px; margin-bottom: 10px; }
+.customer-list-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; align-items: center; }
+.customer-row-info { font-size: 0.95rem; }
+.customer-row-type { font-size: 0.8em; color: #888; }
+.modal-close-container { text-align: center; margin-top: 10px; }
+
+/* Admin Formulär */
+.admin-form { display: flex; flex-direction: column; gap: 15px; text-align: left; }
+.admin-form label { font-weight: bold; font-size: 0.9rem; }
+.admin-form input, .admin-form select { padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+.new-cat-input { border-color: #f39c12 !important; }
+
+/* Action Buttons i listor */
+.btn-admin-action { border: none; border-radius: 4px; color: white; cursor: pointer; padding: 4px 8px; margin-left: 5px; }
+.btn-edit { background: #3498db; }

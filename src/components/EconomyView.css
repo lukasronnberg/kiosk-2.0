@@ -1,0 +1,48 @@
+.economy-view { 
+  flex: 1; 
+  background-color: var(--bg-color); 
+  padding: 40px 20px; 
+  overflow-y: auto; 
+  display: block; 
+}
+
+.economy-container { 
+  width: 100%; 
+  max-width: 1000px; 
+  background: white; 
+  padding: 30px; 
+  border-radius: 16px; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+  margin: 0 auto;
+  min-height: min-content; 
+}
+
+/* Header */
+.economy-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
+.section-title { border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; color: #555; }
+
+/* Listor */
+.debt-list { margin-bottom: 30px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; }
+
+/* Grid-system för rader */
+.debt-header, .debt-row { 
+  display: grid; 
+  grid-template-columns: 2fr 1fr 2fr 1.5fr; 
+  padding: 15px; 
+  align-items: center; 
+}
+
+.debt-header { background: #f9f9f9; font-weight: bold; border-bottom: 2px solid #eee; }
+.debt-row { border-bottom: 1px solid #eee; }
+
+/* Knappar */
+.debt-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.btn-action { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.85rem; transition: opacity 0.2s; white-space: nowrap; }
+.btn-action:hover { opacity: 0.8; }
+.btn-action:disabled { background: #eee; color: #aaa; cursor: not-allowed; }
+
+/* Färger på knappar */
+.btn-email { background: #2c3e50; color: white; }
+.btn-reminder { background: #e67e22; color: white; }
+.btn-register-payment { background: #3498db; color: white; } 
+.btn-undo { background: #95a5a6; color: white; font-size: 0.8rem; }

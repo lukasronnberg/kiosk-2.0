@@ -1,0 +1,34 @@
+.appContainer {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  padding-top: 0;
+  transition: padding-top 0.2s;
+}
+
+.appContainer.adminActive {
+  padding-top: 25px;
+}
+
+.adminBanner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 25px;
+  background-color: #f39c12;
+  color: white;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+  line-height: 25px;
+  z-index: 2000;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.adminLink {
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 900;
+  margin-left: 20px;
+}

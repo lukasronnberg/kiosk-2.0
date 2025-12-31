@@ -1,0 +1,32 @@
+.product-area { flex: 1; display: flex; flex-direction: column; background-color: var(--bg-color); height: 100vh; overflow: hidden; }
+
+/* Header & Logo */
+.product-header { padding: 15px 30px; background: white; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; height: 140px; flex-shrink: 0; }
+.logo-container { display: flex; align-items: center; gap: 20px; }
+.app-logo { height: 110px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+.app-title { font-size: 2rem; font-weight: 900; color: var(--primary-red); letter-spacing: -1px; text-transform: uppercase; }
+
+/* Kategorier */
+.category-tabs { display: flex; gap: 10px; padding: 15px 25px; overflow-x: auto; flex-shrink: 0; }
+.category-tab { padding: 8px 16px; background: white; border: 1px solid #ddd; border-radius: 20px; font-weight: 600; color: #666; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.category-tab.active { background-color: var(--primary-red); color: white; border-color: var(--primary-red); box-shadow: 0 4px 10px rgba(192, 57, 43, 0.3); }
+
+/* Grid */
+.product-grid-container { flex: 1; overflow-y: auto; padding: 25px; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding-bottom: 50px; }
+
+/* Kort */
+.product-card { background: white; border-radius: 12px; padding: 15px; height: 130px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: all 0.1s; border-bottom: 4px solid transparent; }
+.product-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); border-bottom-color: var(--primary-red); }
+.product-card:active { transform: scale(0.97); }
+.product-name { font-weight: 700; font-size: 1rem; margin-bottom: 5px; line-height: 1.2; }
+.product-price { color: #777; font-weight: 500; }
+
+/* Admin knappar på kort */
+.admin-lock-btn { border: none; background: none; font-size: 1.2rem; cursor: pointer; opacity: 0.3; }
+.admin-lock-btn:hover { opacity: 1; }
+.add-product-card { border: 2px dashed #ccc; font-size: 3rem; color: #ccc; }
+.admin-controls { margin-top: 5px; display: flex; gap: 5px; width: 100%; position: absolute; bottom: 5px; left: 0; padding: 0 10px; }
+.btn-admin-action { flex: 1; border: none; border-radius: 4px; color: white; cursor: pointer; padding: 4px; z-index: 5; }
+.btn-edit { background: #3498db; } 
+.btn-delete { background: #e74c3c; }
